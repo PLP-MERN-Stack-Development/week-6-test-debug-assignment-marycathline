@@ -1,0 +1,28 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "jest"
+  },
+  "mongodbMemoryServerOptions": {
+    "instance": {
+      "dbName": "test"
+    },
+    "binary": {
+      "version": "latest",
+      "skipMD5": true
+    },
+    "autoStart": false
+  },
+  "jest": {
+    "testTimeout": 30000
+  },
+  "dependencies": {
+    "dotenv": "^17.2.0",
+    "mongoose": "^6.0.0"
+  },
+  "devDependencies": {
+    "jest": "^27.0.0",
+    "mongodb-memory-server": "^10.1.4"
+  }
+}

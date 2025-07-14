@@ -1,5 +1,8 @@
 // posts.test.js - Integration tests for posts API endpoints
 
+process.env.DEBUG = 'mongodb-memory-server';
+jest.setTimeout(30000);
+
 const request = require('supertest');
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
@@ -17,7 +20,10 @@ let postId;
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   const mongoUri = mongoServer.getUri();
-  await mongoose.connect(mongoUri);
+  await mongoose.connect(mongoUri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
 
   // Create a test user
   const user = await User.create({
@@ -42,19 +48,36 @@ beforeAll(async () => {
 // Clean up after all tests
 afterAll(async () => {
   await mongoose.disconnect();
-  await mongoServer.stop();
+  if (mongoServer) {
+    await mongoServer.stop();
+  }
 });
 
 // Clean up database between tests
 afterEach(async () => {
-  // Keep the test user and post, but clean up any other created data
   const collections = mongoose.connection.collections;
   for (const key in collections) {
     const collection = collections[key];
-    if (collection.collectionName !== 'users' && collection.collectionName !== 'posts') {
-      await collection.deleteMany({});
-    }
+    await collection.deleteMany();
   }
+
+  // Recreate the initial user and post after cleanup
+  const user = await User.create({
+    username: 'testuser',
+    email: 'test@example.com',
+    password: 'password123',
+  });
+  userId = user._id;
+  token = generateToken(user);
+
+  const post = await Post.create({
+    title: 'Test Post',
+    content: 'This is a test post content',
+    author: userId,
+    category: mongoose.Types.ObjectId(),
+    slug: 'test-post',
+  });
+  postId = post._id;
 });
 
 describe('POST /api/posts', () => {
